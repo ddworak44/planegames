@@ -7,30 +7,43 @@ function resizeCanvas() {
   canvas.height = window.innerHeight - 20; // 10px top + 10px bottom
 }
 
-// Resize on load and resize events
-window.addEventListener("load", () => {
-  resizeCanvas();
-  // Initialize tornado position to center on first load
-  if (tornado.x === 0) {
-    tornado.x = canvas.width / 2;
-  }
-});
+// Resize event handler
 window.addEventListener("resize", () => {
-  const oldCenter = tornado.x - canvas.width / 2;
+  const oldCenter1 = tornado1.x - canvas.width / 2;
+  const oldCenter2 = tornado2.x - canvas.width / 2;
   resizeCanvas();
-  // Maintain relative position, but clamp to bounds
-  tornado.x = canvas.width / 2 + oldCenter;
+  // Maintain relative positions, but clamp to bounds
+  tornado1.x = canvas.width / 2 + oldCenter1;
+  tornado2.x = canvas.width / 2 + oldCenter2;
 });
 
-// Generate random a-z character
+// Generate random a-z character (for player 1)
 function randomChar() {
   return String.fromCharCode(97 + Math.floor(Math.random() * 26)); // a-z
 }
 
+// Generate random 0-9 character (for player 2)
+function randomDigit() {
+  return String.fromCharCode(48 + Math.floor(Math.random() * 10)); // 0-9
+}
+
 // Tornado state - each level is an array of characters
 // Level 0 has length 1, level 1 has length 2, etc.
-const tornado = {
+const tornado1 = {
   levels: [["A"]], // Start with level 0 = ["A"]
+  maxLevels: 10, // Maximum 10 levels (0-9)
+  x: 0, // Horizontal position (will be set to center initially)
+  y: 0, // Will be set to bottom of canvas
+  rotation: 0, // Current rotation angle in radians
+  spinSpeed: 0, // Current spin speed (positive = right, negative = left)
+  spinDecay: 0.95, // How quickly spin slows down
+  velocityX: 0, // Horizontal velocity (positive = right, negative = left)
+  velocityDecay: 0.92, // How quickly horizontal movement slows down
+  maxWidth: 0, // Maximum width of tornado (calculated from levels)
+};
+
+const tornado2 = {
+  levels: [["0"]], // Start with level 0 = ["0"]
   maxLevels: 10, // Maximum 10 levels (0-9)
   x: 0, // Horizontal position (will be set to center initially)
   y: 0, // Will be set to bottom of canvas
@@ -46,6 +59,8 @@ const tornado = {
 const keys = {
   a: false,
   d: false,
+  arrowLeft: false,
+  arrowRight: false,
 };
 
 // Handle key down
@@ -53,12 +68,20 @@ document.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   if (key === "a") {
     keys.a = true;
-    // Spin left: rotate each level left and add random char to right
-    spinTornadoLeft();
+    // Player 1: Spin left
+    spinTornadoLeft(tornado1, randomChar);
   } else if (key === "d") {
     keys.d = true;
-    // Spin right: rotate each level right and add random char to left
-    spinTornadoRight();
+    // Player 1: Spin right
+    spinTornadoRight(tornado1, randomChar);
+  } else if (e.key === "ArrowLeft") {
+    keys.arrowLeft = true;
+    // Player 2: Spin left
+    spinTornadoLeft(tornado2, randomDigit);
+  } else if (e.key === "ArrowRight") {
+    keys.arrowRight = true;
+    // Player 2: Spin right
+    spinTornadoRight(tornado2, randomDigit);
   }
 });
 
@@ -69,18 +92,22 @@ document.addEventListener("keyup", (e) => {
     keys.a = false;
   } else if (key === "d") {
     keys.d = false;
+  } else if (e.key === "ArrowLeft") {
+    keys.arrowLeft = false;
+  } else if (e.key === "ArrowRight") {
+    keys.arrowRight = false;
   }
 });
 
-// Spin tornado left (A key)
-function spinTornadoLeft() {
+// Spin tornado left (A key or ArrowLeft)
+function spinTornadoLeft(tornado, randomCharFunc) {
   // Rotate each existing level left and replace last char with random
   tornado.levels.forEach((level, index) => {
     // Rotate left: move first char to end
     const firstChar = level.shift();
     level.push(firstChar);
     // Replace last character with random (maintains length)
-    level[level.length - 1] = randomChar();
+    level[level.length - 1] = randomCharFunc();
   });
 
   // Add new level if we haven't reached max
@@ -89,7 +116,7 @@ function spinTornadoLeft() {
     const newLevel = [];
     // Fill with random chars, length = newLevelIndex + 1
     for (let i = 0; i <= newLevelIndex; i++) {
-      newLevel.push(randomChar());
+      newLevel.push(randomCharFunc());
     }
     tornado.levels.push(newLevel);
   }
@@ -101,15 +128,15 @@ function spinTornadoLeft() {
   tornado.velocityX -= 2;
 }
 
-// Spin tornado right (D key)
-function spinTornadoRight() {
+// Spin tornado right (D key or ArrowRight)
+function spinTornadoRight(tornado, randomCharFunc) {
   // Rotate each existing level right and replace first char with random
   tornado.levels.forEach((level, index) => {
     // Rotate right: move last char to beginning
     const lastChar = level.pop();
     level.unshift(lastChar);
     // Replace first character with random (maintains length)
-    level[0] = randomChar();
+    level[0] = randomCharFunc();
   });
 
   // Add new level if we haven't reached max
@@ -118,7 +145,7 @@ function spinTornadoRight() {
     const newLevel = [];
     // Fill with random chars, length = newLevelIndex + 1
     for (let i = 0; i <= newLevelIndex; i++) {
-      newLevel.push(randomChar());
+      newLevel.push(randomCharFunc());
     }
     tornado.levels.push(newLevel);
   }
@@ -131,7 +158,7 @@ function spinTornadoRight() {
 }
 
 // Draw the tornado made of ASCII characters
-function drawTornado() {
+function drawTornado(tornado) {
   ctx.save();
 
   // Move to tornado position (center bottom)
@@ -195,7 +222,7 @@ function drawBackground() {
 }
 
 // Calculate maximum width of tornado
-function calculateMaxWidth() {
+function calculateMaxWidth(tornado) {
   const baseWidth = 30;
   const topWidthMultiplier = 2.5;
   const maxLevels = tornado.levels.length;
@@ -204,16 +231,10 @@ function calculateMaxWidth() {
   return Math.max(baseWidth, topWidth);
 }
 
-// Animation loop
-function animate() {
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw background
-  drawBackground();
-
+// Update tornado physics
+function updateTornado(tornado) {
   // Calculate tornado max width for boundary checking
-  tornado.maxWidth = calculateMaxWidth();
+  tornado.maxWidth = calculateMaxWidth(tornado);
   const halfWidth = tornado.maxWidth / 2;
   const borderPadding = 10; // Keep some padding from edges
 
@@ -242,9 +263,23 @@ function animate() {
 
   // Decay spin speed
   tornado.spinSpeed *= tornado.spinDecay;
+}
 
-  // Draw tornado
-  drawTornado();
+// Animation loop
+function animate() {
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background
+  drawBackground();
+
+  // Update both tornadoes
+  updateTornado(tornado1);
+  updateTornado(tornado2);
+
+  // Draw both tornadoes
+  drawTornado(tornado1);
+  drawTornado(tornado2);
 
   // Continue animation
   requestAnimationFrame(animate);
@@ -253,9 +288,11 @@ function animate() {
 // Initialize
 window.addEventListener("load", () => {
   resizeCanvas();
-  // Initialize tornado position to center
-  tornado.x = canvas.width / 2;
-  tornado.y = canvas.height - 50;
+  // Initialize tornado positions
+  tornado1.x = canvas.width / 3; // Left third
+  tornado1.y = canvas.height - 50;
+  tornado2.x = (canvas.width * 2) / 3; // Right third
+  tornado2.y = canvas.height - 50;
   // Start animation loop
   animate();
 });
