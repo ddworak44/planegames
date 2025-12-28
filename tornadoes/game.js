@@ -8,8 +8,19 @@ function resizeCanvas() {
 }
 
 // Resize on load and resize events
-window.addEventListener("load", resizeCanvas);
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("load", () => {
+  resizeCanvas();
+  // Initialize tornado position to center on first load
+  if (tornado.x === 0) {
+    tornado.x = canvas.width / 2;
+  }
+});
+window.addEventListener("resize", () => {
+  const oldCenter = tornado.x - canvas.width / 2;
+  resizeCanvas();
+  // Maintain relative position, but clamp to bounds
+  tornado.x = canvas.width / 2 + oldCenter;
+});
 
 // Generate random a-z character
 function randomChar() {
@@ -21,11 +32,14 @@ function randomChar() {
 const tornado = {
   levels: [["A"]], // Start with level 0 = ["A"]
   maxLevels: 10, // Maximum 10 levels (0-9)
-  x: 0, // Will be set to center of canvas
+  x: 0, // Horizontal position (will be set to center initially)
   y: 0, // Will be set to bottom of canvas
   rotation: 0, // Current rotation angle in radians
   spinSpeed: 0, // Current spin speed (positive = right, negative = left)
   spinDecay: 0.95, // How quickly spin slows down
+  velocityX: 0, // Horizontal velocity (positive = right, negative = left)
+  velocityDecay: 0.92, // How quickly horizontal movement slows down
+  maxWidth: 0, // Maximum width of tornado (calculated from levels)
 };
 
 // Key state tracking
@@ -80,8 +94,11 @@ function spinTornadoLeft() {
     tornado.levels.push(newLevel);
   }
 
-  // Update spin speed
+  // Update spin speed (rotation)
   tornado.spinSpeed -= 0.05;
+
+  // Move tornado left
+  tornado.velocityX -= 2;
 }
 
 // Spin tornado right (D key)
@@ -106,8 +123,11 @@ function spinTornadoRight() {
     tornado.levels.push(newLevel);
   }
 
-  // Update spin speed
+  // Update spin speed (rotation)
   tornado.spinSpeed += 0.05;
+
+  // Move tornado right
+  tornado.velocityX += 2;
 }
 
 // Draw the tornado made of ASCII characters
@@ -116,9 +136,6 @@ function drawTornado() {
 
   // Move to tornado position (center bottom)
   ctx.translate(tornado.x, tornado.y);
-
-  // Apply rotation
-  ctx.rotate(tornado.rotation);
 
   // Set font properties
   ctx.font = "bold 20px monospace";
@@ -177,6 +194,16 @@ function drawBackground() {
   ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
 }
 
+// Calculate maximum width of tornado
+function calculateMaxWidth() {
+  const baseWidth = 30;
+  const topWidthMultiplier = 2.5;
+  const maxLevels = tornado.levels.length;
+  if (maxLevels === 0) return baseWidth;
+  const topWidth = baseWidth + (baseWidth * topWidthMultiplier - baseWidth);
+  return Math.max(baseWidth, topWidth);
+}
+
 // Animation loop
 function animate() {
   // Clear canvas
@@ -185,8 +212,29 @@ function animate() {
   // Draw background
   drawBackground();
 
-  // Update tornado position (center bottom)
-  tornado.x = canvas.width / 2;
+  // Calculate tornado max width for boundary checking
+  tornado.maxWidth = calculateMaxWidth();
+  const halfWidth = tornado.maxWidth / 2;
+  const borderPadding = 10; // Keep some padding from edges
+
+  // Update horizontal position based on velocity
+  tornado.x += tornado.velocityX;
+
+  // Clamp tornado position to stay within canvas bounds
+  tornado.x = Math.max(
+    halfWidth + borderPadding,
+    Math.min(canvas.width - halfWidth - borderPadding, tornado.x)
+  );
+
+  // Decay horizontal velocity
+  tornado.velocityX *= tornado.velocityDecay;
+
+  // Stop very small movements
+  if (Math.abs(tornado.velocityX) < 0.1) {
+    tornado.velocityX = 0;
+  }
+
+  // Update vertical position (always at bottom)
   tornado.y = canvas.height - 50;
 
   // Update rotation based on spin speed
@@ -205,6 +253,9 @@ function animate() {
 // Initialize
 window.addEventListener("load", () => {
   resizeCanvas();
+  // Initialize tornado position to center
+  tornado.x = canvas.width / 2;
+  tornado.y = canvas.height - 50;
   // Start animation loop
   animate();
 });
