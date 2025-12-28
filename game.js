@@ -11,6 +11,34 @@ function resizeCanvas() {
 window.addEventListener("load", resizeCanvas);
 window.addEventListener("resize", resizeCanvas);
 
+// Draw the night sky background (once)
+function drawNightSky() {
+  console.log("adding sky");
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Create gradient background: indigo to near-black
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#1a1a40"); // top: deep indigo
+  gradient.addColorStop(1, "#121212"); // bottom: near-black
+
+  // Fill background
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Optional: Add faint shimmer (static, non-destructive)
+  const shimmerGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  shimmerGradient.addColorStop(0, "#2a2a50");
+  shimmerGradient.addColorStop(1, "#3a3a60");
+
+  // Draw shimmer overlay with very low alpha (0.08) for ethereal glow
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = shimmerGradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1.0; // Reset alpha for next draws
+  console.log("ending sky");
+}
+
 // Click handler
 canvas.addEventListener("click", (e) => {
   // Get click position relative to canvas
@@ -18,8 +46,8 @@ canvas.addEventListener("click", (e) => {
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  // Draw red dot
-  ctx.fillStyle = "rgb(211,56,51)";
+  // Draw red star (dot)
+  ctx.fillStyle = "rgb(211,56,51)"; // Deep red, like a star
   ctx.beginPath();
   ctx.arc(x, y, 5, 0, Math.PI * 2);
   ctx.fill();
@@ -44,3 +72,11 @@ document.getElementById("save-button").addEventListener("click", () => {
   link.click();
   document.body.removeChild(link);
 });
+
+window.addEventListener("load", () => {
+  resizeCanvas();
+  drawNightSky(); // Draw the night sky background
+});
+
+// Resize on resize events
+window.addEventListener("resize", resizeCanvas);
