@@ -49,12 +49,99 @@
       #save-button:hover {
         background-color: #45a049;
       }
+
+      #instructions {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        max-width: 300px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        z-index: 2000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #instructions h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      #instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+
+      #instructions li {
+        margin: 5px 0;
+        color: #666;
+      }
+
+      #instructions-toggle {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 2001;
+      }
+
+      #instructions-toggle:hover {
+        background-color: #45a049;
+      }
+
+      #instructions.hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
+    <button id="instructions-toggle">Show Instructions</button>
+    <div id="instructions" class="hidden">
+      <h3>Constellation Game</h3>
+      <ul>
+        <li><strong>Click</strong> anywhere on the canvas to place a star</li>
+        <li>
+          <strong>Arrow Keys</strong> (↑↓←→) connect the current star to its
+          nearest neighbor
+        </li>
+        <li>Each star is marked with a glowing border</li>
+        <li>Arrow keys won't connect back to the previous star</li>
+        <li>
+          <strong>Save as PNG</strong> button saves your constellation as an
+          image
+        </li>
+      </ul>
+      <p style="margin-top: 10px; font-size: 12px; color: #999">
+        Create beautiful star patterns by connecting stars in creative ways!
+      </p>
+    </div>
     <canvas id="game-canvas"></canvas>
     <button id="button"></button>
     <button id="save-button">Save as PNG</button>
+    <script>
+      const instructionsToggle = document.getElementById("instructions-toggle");
+      const instructions = document.getElementById("instructions");
+
+      instructionsToggle.addEventListener("click", () => {
+        if (instructions.classList.contains("hidden")) {
+          instructions.classList.remove("hidden");
+          instructionsToggle.textContent = "Hide Instructions";
+        } else {
+          instructions.classList.add("hidden");
+          instructionsToggle.textContent = "Show Instructions";
+        }
+      });
+    </script>
     <script src="game.js"></script>
   </body>
 </html>

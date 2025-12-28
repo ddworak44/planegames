@@ -49,11 +49,125 @@
       #save-button:hover {
         background-color: #45a049;
       }
+
+      #instructions {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        max-width: 350px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        z-index: 2000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #instructions h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      #instructions h4 {
+        margin: 15px 0 8px 0;
+        color: #444;
+        font-size: 15px;
+      }
+
+      #instructions ul {
+        margin: 8px 0;
+        padding-left: 20px;
+      }
+
+      #instructions li {
+        margin: 5px 0;
+        color: #666;
+      }
+
+      #instructions-toggle {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 2001;
+      }
+
+      #instructions-toggle:hover {
+        background-color: #45a049;
+      }
+
+      #instructions.hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
+    <button id="instructions-toggle">Show Instructions</button>
+    <div id="instructions" class="hidden">
+      <h3>Tornado Game</h3>
+      <p style="margin: 0 0 10px 0; color: #666">
+        Build tornadoes with ASCII characters and battle your opponent!
+      </p>
+
+      <h4>Player 1 Controls (Left Tornado):</h4>
+      <ul>
+        <li><strong>A</strong> - Spin left (build tornado, move left)</li>
+        <li><strong>D</strong> - Spin right (build tornado, move right)</li>
+        <li>
+          <strong>W</strong> - Shoot projectile at opponent's highest tier
+        </li>
+        <li><strong>S</strong> - Duck (remove top layer to avoid attacks)</li>
+      </ul>
+
+      <h4>Player 2 Controls (Right Tornado):</h4>
+      <ul>
+        <li><strong>← →</strong> - Arrow Left/Right: Spin left/right</li>
+        <li><strong>↑</strong> - Arrow Up: Shoot projectile</li>
+        <li><strong>↓</strong> - Arrow Down: Duck (remove top layer)</li>
+      </ul>
+
+      <h4>Game Rules:</h4>
+      <ul>
+        <li>Build your tornado by spinning (A/D or Arrow keys)</li>
+        <li>Shoot at your opponent's <strong>highest tier</strong></li>
+        <li>Duck to avoid shots, but be careful!</li>
+        <li>
+          If you're at level 0 (base level) and get hit, you're
+          <strong>eliminated</strong>!
+        </li>
+        <li>Maximum 10 levels per tornado</li>
+      </ul>
+
+      <p style="margin-top: 10px; font-size: 12px; color: #999">
+        Strategy: Build up layers, shoot strategically, and duck at the right
+        moment!
+      </p>
+    </div>
     <canvas id="game-canvas"></canvas>
     <button id="button"></button>
+    <script>
+      const instructionsToggle = document.getElementById("instructions-toggle");
+      const instructions = document.getElementById("instructions");
+
+      instructionsToggle.addEventListener("click", () => {
+        if (instructions.classList.contains("hidden")) {
+          instructions.classList.remove("hidden");
+          instructionsToggle.textContent = "Hide Instructions";
+        } else {
+          instructions.classList.add("hidden");
+          instructionsToggle.textContent = "Show Instructions";
+        }
+      });
+    </script>
     <script src="game.js"></script>
   </body>
 </html>
