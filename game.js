@@ -39,24 +39,34 @@ function drawNightSky() {
   console.log("ending sky");
 }
 
-// Click handler
+// Click handler: Draw a white polygon (star) at click point
 canvas.addEventListener("click", (e) => {
   // Get click position relative to canvas
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  // Draw red star (dot)
-  ctx.fillStyle = "rgb(211,56,51)"; // Deep red, like a star
-  ctx.beginPath();
-  ctx.arc(x, y, 5, 0, Math.PI * 2);
-  ctx.fill();
+  const sides = Math.floor(Math.random() * 5) + 3; // 3 to 9 inclusive
+  const radius = 5; // size of the shape
 
-  // Position button at click location
-  const button = document.getElementById("button");
-  button.style.left = x + "px";
-  button.style.top = y + "px";
-  button.style.display = "block"; // Show it
+  ctx.beginPath();
+  ctx.moveTo(x, y - radius); // start at top
+
+  // Calculate each vertex
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const nextX = x + Math.cos(angle) * radius;
+    const nextY = y + Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(nextX, nextY);
+    } else {
+      ctx.lineTo(nextX, nextY);
+    }
+  }
+
+  ctx.closePath();
+  ctx.fillStyle = "rgb(255, 255, 255)";
+  ctx.fill();
 });
 
 // Save as PNG button handler
@@ -73,10 +83,8 @@ document.getElementById("save-button").addEventListener("click", () => {
   document.body.removeChild(link);
 });
 
+// Initialize
 window.addEventListener("load", () => {
   resizeCanvas();
   drawNightSky(); // Draw the night sky background
 });
-
-// Resize on resize events
-window.addEventListener("resize", resizeCanvas);
