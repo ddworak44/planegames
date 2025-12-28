@@ -39,6 +39,10 @@ function drawNightSky() {
   console.log("ending sky");
 }
 
+// Track all stars (as [x, y] centers)
+let stars = [];
+let lastStarIndex = -1; // Initially no star selected
+
 // Click handler: Draw a white polygon (star) at click point
 canvas.addEventListener("click", (e) => {
   // Get click position relative to canvas
@@ -67,7 +71,31 @@ canvas.addEventListener("click", (e) => {
   ctx.closePath();
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.fill();
+
+  // Add to stars array
+  stars.push([x, y]);
+  lastStarIndex = stars.length - 1; // Update last star index
+
+  // Draw border around the current star (if any)
+  if (lastStarIndex >= 0) {
+    drawCurrentStarBorder();
+  }
 });
+
+// Function to draw a glowing border around the current star
+function drawCurrentStarBorder() {
+  if (lastStarIndex < 0) return;
+
+  const centerX = stars[lastStarIndex][0];
+  const centerY = stars[lastStarIndex][1];
+
+  // Draw a small glowing ring around the star
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 10, 0, Math.PI * 2); // Radius 10px (bigger than star's 5px)
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; // Soft white glow
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
 
 // Save as PNG button handler
 document.getElementById("save-button").addEventListener("click", () => {
@@ -82,6 +110,56 @@ document.getElementById("save-button").addEventListener("click", () => {
   link.click();
   document.body.removeChild(link);
 });
+
+// Arrow key handler: Connect current star to nearest neighbor
+document.addEventListener("keydown", (e) => {
+  if (
+    e.key === "ArrowUp" ||
+    e.key === "ArrowDown" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowRight"
+  ) {
+    if (lastStarIndex < 0) return; // No star to start from
+
+    // Find nearest neighbor (excluding self)
+    let nearestIndex = -1;
+    let minDist = Infinity;
+
+    for (let i = 0; i < stars.length; i++) {
+      if (i === lastStarIndex) continue; // Avoid connecting to self
+
+      const dist = distance(stars[lastStarIndex], stars[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearestIndex = i;
+      }
+    }
+
+    if (nearestIndex >= 0) {
+      // Draw a line from last star to nearest neighbor
+      const [lastX, lastY] = stars[lastStarIndex];
+      const [nearestX, nearestY] = stars[nearestIndex];
+
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(nearestX, nearestY);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; // White line, slightly less bright than star
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Optional: Move cursor to nearest star (optional behavior)
+      // lastStarIndex = nearestIndex;
+      // drawCurrentStarBorder(); // Re-draw border at new star
+    }
+  }
+});
+
+// Helper function to calculate Euclidean distance between two points
+function distance(p1, p2) {
+  const dx = p1[0] - p2[0];
+  const dy = p1[1] - p2[1];
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
 // Initialize
 window.addEventListener("load", () => {
