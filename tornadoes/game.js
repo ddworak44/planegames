@@ -40,6 +40,7 @@ const tornado1 = {
   velocityX: 0, // Horizontal velocity (positive = right, negative = left)
   velocityDecay: 0.92, // How quickly horizontal movement slows down
   maxWidth: 0, // Maximum width of tornado (calculated from levels)
+  eliminated: false, // Whether this player has been eliminated
 };
 
 const tornado2 = {
@@ -53,6 +54,7 @@ const tornado2 = {
   velocityX: 0, // Horizontal velocity (positive = right, negative = left)
   velocityDecay: 0.92, // How quickly horizontal movement slows down
   maxWidth: 0, // Maximum width of tornado (calculated from levels)
+  eliminated: false, // Whether this player has been eliminated
 };
 
 // Key state tracking
@@ -73,39 +75,39 @@ const projectiles = [];
 // Handle key down
 document.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
-  if (key === "a") {
+  if (key === "a" && !tornado1.eliminated) {
     keys.a = true;
     // Player 1: Spin left
     spinTornadoLeft(tornado1, randomChar);
-  } else if (key === "d") {
+  } else if (key === "d" && !tornado1.eliminated) {
     keys.d = true;
     // Player 1: Spin right
     spinTornadoRight(tornado1, randomChar);
-  } else if (key === "w") {
+  } else if (key === "w" && !tornado1.eliminated) {
     if (!keys.w) {
       keys.w = true;
       // Player 1: Shoot
       shootProjectile(tornado1, tornado2, randomChar);
     }
-  } else if (key === "s") {
+  } else if (key === "s" && !tornado1.eliminated) {
     keys.s = true;
     // Player 1: Duck (remove top layer)
     duckTornado(tornado1);
-  } else if (e.key === "ArrowLeft") {
+  } else if (e.key === "ArrowLeft" && !tornado2.eliminated) {
     keys.arrowLeft = true;
     // Player 2: Spin left
     spinTornadoLeft(tornado2, randomDigit);
-  } else if (e.key === "ArrowRight") {
+  } else if (e.key === "ArrowRight" && !tornado2.eliminated) {
     keys.arrowRight = true;
     // Player 2: Spin right
     spinTornadoRight(tornado2, randomDigit);
-  } else if (e.key === "ArrowUp") {
+  } else if (e.key === "ArrowUp" && !tornado2.eliminated) {
     if (!keys.arrowUp) {
       keys.arrowUp = true;
       // Player 2: Shoot
       shootProjectile(tornado2, tornado1, randomDigit);
     }
-  } else if (e.key === "ArrowDown") {
+  } else if (e.key === "ArrowDown" && !tornado2.eliminated) {
     keys.arrowDown = true;
     // Player 2: Duck (remove top layer)
     duckTornado(tornado2);
@@ -194,22 +196,31 @@ function spinTornadoRight(tornado, randomCharFunc) {
 
 // Duck tornado (S key or ArrowDown) - remove top layer
 function duckTornado(tornado) {
-  // Only remove if there's more than just the base level
-  if (tornado.levels.length > 1) {
+  // Can duck even to level 0, but that makes you vulnerable to elimination
+  if (tornado.levels.length > 0) {
     tornado.levels.pop(); // Remove top level
   }
 }
 
 // Shoot projectile (W key or ArrowUp)
 function shootProjectile(shooter, target, randomCharFunc) {
+  // Don't shoot if shooter is eliminated
+  if (shooter.eliminated) return;
+
   // Calculate projectile starting position (top of shooter tornado)
   const shooterHeight = shooter.levels.length * 35; // levelHeight
   const startX = shooter.x;
   const startY = shooter.y - shooterHeight;
 
-  // Calculate direction to target
-  const dx = target.x - startX;
-  const dy = target.y - startY;
+  // Calculate target position (top tier - highest level of target tornado)
+  const targetHeight = target.levels.length * 35;
+  const targetTopY = target.y - targetHeight;
+  const targetX = target.x;
+  const targetY = targetTopY; // Aim at the top tier
+
+  // Calculate direction to target's top tier
+  const dx = targetX - startX;
+  const dy = targetY - startY;
   const distance = Math.sqrt(dx * dx + dy * dy);
   const speed = 8; // Projectile speed
 
@@ -221,6 +232,7 @@ function shootProjectile(shooter, target, randomCharFunc) {
     vy: (dy / distance) * speed,
     shooter: shooter, // Reference to who shot it
     target: target, // Reference to target
+    targetTopY: targetTopY, // Store target top Y for collision checking
     char: randomCharFunc(), // Character to display
     radius: 8, // Collision radius
     lifetime: 300, // Frames before it disappears
@@ -269,11 +281,22 @@ function drawTornado(tornado) {
       const x = Math.cos(angle) * radius;
       const charY = y + Math.sin(angle) * radius * 0.3; // Flatten vertically
 
-      // Draw character
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.9 - t * 0.3})`; // Darker at bottom
+      // Draw character - grayed out if eliminated
+      if (tornado.eliminated) {
+        ctx.fillStyle = `rgba(150, 150, 150, ${0.5 - t * 0.2})`; // Gray if eliminated
+      } else {
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.9 - t * 0.3})`; // Darker at bottom
+      }
       ctx.fillText(char.toUpperCase(), x, charY);
     });
   });
+
+  // Draw elimination indicator
+  if (tornado.eliminated) {
+    ctx.font = "bold 24px monospace";
+    ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+    ctx.fillText("ELIMINATED", 0, -maxLevels * levelHeight - 20);
+  }
 
   ctx.restore();
 }
@@ -305,6 +328,13 @@ function calculateMaxWidth(tornado) {
 
 // Update tornado physics
 function updateTornado(tornado) {
+  // Don't update if eliminated
+  if (tornado.eliminated) {
+    tornado.velocityX = 0;
+    tornado.spinSpeed = 0;
+    return;
+  }
+
   // Calculate tornado max width for boundary checking
   tornado.maxWidth = calculateMaxWidth(tornado);
   const halfWidth = tornado.maxWidth / 2;
@@ -361,37 +391,51 @@ function updateProjectiles() {
       continue;
     }
 
-    // Check collision with target tornado
+    // Check collision with target tornado's top tier (highest level)
     const target = proj.target;
+
+    // Don't check collision if target is already eliminated
+    if (target.eliminated) {
+      continue;
+    }
+
     const targetHeight = target.levels.length * 35;
     const targetTopY = target.y - targetHeight;
-    const targetBottomY = target.y;
+    const levelHeight = 35;
 
-    // Check if projectile is within tornado bounds
-    const dx = proj.x - target.x;
-    const dy = proj.y - target.y;
-    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+    // Check if projectile is near the top tier (highest level)
+    // Top tier is at the very top of the tornado
+    const topTierY = targetTopY;
+    const topTierBottomY = targetTopY + levelHeight;
 
-    // Calculate tornado width at projectile's height
-    const t = Math.max(0, Math.min(1, (proj.y - targetTopY) / targetHeight));
-    const baseWidth = 30;
-    const topWidthMultiplier = 2.5;
-    const widthAtHeight =
-      baseWidth + (baseWidth * topWidthMultiplier - baseWidth) * (1 - t);
-    const radiusAtHeight = widthAtHeight / 2;
+    // Check if projectile is within the top tier's vertical range
+    if (proj.y >= topTierY && proj.y <= topTierBottomY) {
+      // Calculate tornado width at top tier
+      const baseWidth = 30;
+      const topWidthMultiplier = 2.5;
+      const topWidth = baseWidth + (baseWidth * topWidthMultiplier - baseWidth);
+      const topRadius = topWidth / 2;
 
-    // Check collision
-    if (
-      proj.y >= targetTopY &&
-      proj.y <= targetBottomY &&
-      distanceFromCenter <= radiusAtHeight + proj.radius
-    ) {
-      // Hit! Remove top layer of target
-      if (target.levels.length > 1) {
-        target.levels.pop();
+      // Check horizontal collision with top tier
+      const dx = proj.x - target.x;
+      const distanceFromCenter = Math.abs(dx);
+
+      if (distanceFromCenter <= topRadius + proj.radius) {
+        // Hit the top tier!
+
+        // If target is at level 0 (base level), they're eliminated
+        if (target.levels.length === 1) {
+          target.eliminated = true;
+          // Clear all levels except base
+          target.levels = [target.levels[0]];
+        } else {
+          // Remove the top layer (highest tier)
+          target.levels.pop();
+        }
+
+        // Remove projectile
+        projectiles.splice(i, 1);
       }
-      // Remove projectile
-      projectiles.splice(i, 1);
     }
   }
 }
