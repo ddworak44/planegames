@@ -1,0 +1,13 @@
+{
+  "name": "ollama",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "llm": "clear; ollama run codellama",
+    "copy": "bash ./copy.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,3 @@
+The goal of this project is that we're using the assistance of offline LLMs to build stuff. We have Node and Vanilla JavaScript. However we don't have the ability to use the interne, if that makes sense. So we cannot use any packages or workarounds.
+
+Here are some helpful files, please analyze AND DO NOT write code:
