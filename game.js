@@ -43,6 +43,9 @@ function drawNightSky() {
 let stars = [];
 let lastStarIndex = -1; // Initially no star selected
 
+// NEW: track the immediately previous star
+let previousStarIndex = -1;
+
 // Click handler: Draw a white polygon (star) at click point
 canvas.addEventListener("click", (e) => {
   // Get click position relative to canvas
@@ -75,6 +78,9 @@ canvas.addEventListener("click", (e) => {
   // Add to stars array
   stars.push([x, y]);
   lastStarIndex = stars.length - 1; // Update last star index
+
+  // Reset traversal history when placing a new star
+  previousStarIndex = -1;
 
   // Draw border around the current star (if any)
   if (lastStarIndex >= 0) {
@@ -121,12 +127,13 @@ document.addEventListener("keydown", (e) => {
   ) {
     if (lastStarIndex < 0) return; // No star to start from
 
-    // Find nearest neighbor (excluding self)
+    // Find nearest neighbor (excluding self AND previous star)
     let nearestIndex = -1;
     let minDist = Infinity;
 
     for (let i = 0; i < stars.length; i++) {
       if (i === lastStarIndex) continue; // Avoid connecting to self
+      if (i === previousStarIndex) continue; // KEY FIX
 
       const dist = distance(stars[lastStarIndex], stars[i]);
       if (dist < minDist) {
@@ -147,9 +154,11 @@ document.addEventListener("keydown", (e) => {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Optional: Move cursor to nearest star (optional behavior)
-      // lastStarIndex = nearestIndex;
-      // drawCurrentStarBorder(); // Re-draw border at new star
+      // Update traversal history
+      previousStarIndex = lastStarIndex;
+      lastStarIndex = nearestIndex;
+
+      drawCurrentStarBorder();
     }
   }
 });
