@@ -1,7 +1,7 @@
 #!/bin/bash
 CONTEXT="context.txt"
-FILE1="index.html"
-FILE2="game.js"
+FILE1="constellations/index.html"
+FILE2="constellations/game.js"
 TEMP_FILE="tempfile.txt"
 
 echo "FYI: "$(cat $CONTEXT)"" >> $TEMP_FILE &&

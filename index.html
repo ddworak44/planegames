@@ -1,60 +1,51 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Constellation Game</title>
+    <title>Games Collection</title>
     <style>
-      html,
       body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
       }
-
-      #game-canvas {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        width: calc(100vw - 50px);
-        height: calc(100vh - 50px);
-        border: 1px solid black;
-        background: white; /* optional: to make canvas visible */
+      h1 {
+        color: #333;
       }
-
-      #button {
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: red;
-        cursor: pointer;
-        z-index: 1000;
-        transition: 0.1s;
-        display: none; /* Initially hidden, shown on click */
+      .game-link {
+        display: block;
+        padding: 15px;
+        margin: 10px 0;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #333;
+        transition: background-color 0.3s;
       }
-
-      #save-button {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 8px 16px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        z-index: 1000;
+      .game-link:hover {
+        background-color: #e8e8e8;
       }
-
-      #save-button:hover {
-        background-color: #45a049;
+      .game-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .game-description {
+        color: #666;
+        font-size: 0.9em;
       }
     </style>
   </head>
   <body>
-    <canvas id="game-canvas"></canvas>
-    <button id="button"></button>
-    <button id="save-button">Save as PNG</button>
-    <script src="game.js"></script>
+    <h1>Games Collection</h1>
+    <a href="constellations/index.html" class="game-link">
+      <div class="game-title">Constellation Game</div>
+      <div class="game-description">
+        Create constellations by clicking to place stars and using arrow keys to
+        connect them
+      </div>
+    </a>
   </body>
 </html>
